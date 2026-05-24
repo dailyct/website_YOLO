@@ -32,7 +32,6 @@
     <style>
         /* =========================================
            CSS 變數定義 (Design System)
-           仿鳴潮風格：深邃黑、科技灰、共鳴金/青
            ========================================= */
         :root {
             --bg-primary: #0a0a0a;       
@@ -71,15 +70,15 @@
             overflow-x: hidden; 
         }
         a { text-decoration: none; color: inherit; transition: color var(--transition-speed); }
-        ul { list-style: none; padding-left: 1.5rem; }
-        li { margin-bottom: 0.5rem; position: relative; }
-        li::before {
+        ul.custom-list { list-style: none; padding-left: 1.5rem; }
+        ul.custom-list li { margin-bottom: 0.5rem; position: relative; }
+        ul.custom-list li::before {
             content: '✦';
             color: var(--accent-color);
             position: absolute;
             left: -1.5rem;
         }
-        img, video, iframe { max-width: 100%; height: auto; display: block; }
+        img, video, iframe { max-width: 100%; display: block; }
         
         mark {
             background-color: transparent;
@@ -172,10 +171,23 @@
             background: var(--bg-secondary); padding: var(--spacing-lg);
             border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: var(--spacing-lg);
         }
-
-        .contact-footer {
-            background-color: var(--bg-secondary); padding: var(--spacing-xl) 0;
-            text-align: center; border-top: 1px solid var(--accent-color);
+        
+        /* iframe 容器 */
+        .iframe-container {
+            position: relative; width: 100%; height: 450px; 
+            border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;
+            background-color: #ffffff; /* 預防透明背景 */
+            margin-top: 10px;
+        }
+        .iframe-container iframe {
+            width: 100%; height: 100%; border: none;
+        }
+        .video-container {
+            position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+            border-radius: 8px; border: 1px solid var(--border-color); margin-top: 15px;
+        }
+        .video-container iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;
         }
 
         /* =========================================
@@ -214,9 +226,9 @@
             <div class="menu-toggle" id="mobile-menu">☰</div>
             <nav class="nav-links" id="nav-links">
                 <a href="#hero">首頁</a>
-                <a href="#concept">核心概念</a>
+                <a href="#concept">核心概念與查證</a>
                 <a href="#interactive">運作流程</a>
-                <a href="#applications">應用與查證</a>
+                <a href="#applications">應用場景</a>
                 <a href="#reflections">學習心得</a>
             </nav>
         </div>
@@ -233,16 +245,24 @@
         </section>
 
         <article id="concept" class="fade-in-section">
-            <h2 class="section-title">核心概念</h2>
+            <h2 class="section-title">核心概念與查證</h2>
             <div class="card">
                 <p><mark>YOLO (You Only Look Once)</mark> 是一種基於深度學習的即時物件偵測 (Object Detection) 模型，主要透過將物件偵測簡化成單一的回歸問題，解決過往的物件演算法運算速度過慢的劣勢。</p>
                 
                 <h3 class="sub-title">🧠 這個演算法是甚麼？</h3>
-                <p>YOLO 是一種基於深度學習的即時物件偵測模型。簡單來說，它不僅能告訴你圖片裡有「什麼東西」（分類），還能精準標示出這些東西「在哪裡」（定位）。它的名字「你只看一次」非常傳神地表達了它只需將影像輸入神經網路一次，就能直接得出結果的特性。</p>
+                <p>簡單來說，它不僅能告訴你圖片裡有「什麼東西」（分類），還能精準標示出這些東西「在哪裡」（定位）。它的名字「你只看一次」非常傳神地表達了它只需將影像輸入神經網路一次，就能直接得出結果的特性。</p>
 
                 <h3 class="sub-title">⚡ 主要解決甚麼問題？</h3>
                 <p>YOLO 主要解決了過去物件偵測演算法「運算速度太慢」的致命傷。</p>
-                <p>在 YOLO 之前，主流模型（如 R-CNN 系列）多採用「兩階段」作法：先在圖片上圈出幾千個可能會有物件的候選區域，然後再逐一對這些區域進行辨識。這種做法雖然準確，但非常耗時。YOLO 將物件偵測轉化為單一的迴歸問題，大幅提升了運算速度，讓影片流的「即時偵測」真正成為可能。</p>
+                <p>在 YOLO 之前，主流模型（如 R-CNN 系列）多採用「兩階段階段」作法：先在圖片上圈出幾千個可能會有物件的候選區域，然後再逐一對這些區域進行辨識。這種做法雖然準確，但非常耗時。YOLO 將物件偵測轉化為單一的迴歸問題，大幅提升了運算速度，讓影片流的「即時偵測」真正成為可能。</p>
+                
+                <hr style="border-color: var(--border-color); margin: 30px 0;">
+
+                <h3 class="sub-title">🔍 查證部分：執行邏輯</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 10px;">資料對比AI的回答: 幾乎相同。以下為直接內嵌的參考資料來源，若無法顯示請 <a href="https://hackmd.io/@allen108108/r1-wSTAjS" target="_blank" style="color: var(--accent-color); text-decoration: underline;">點此開啟HackMD</a>。</p>
+                <div class="iframe-container">
+                    <iframe src="https://hackmd.io/@allen108108/r1-wSTAjS" title="HackMD YOLO Verification"></iframe>
+                </div>
             </div>
         </article>
 
@@ -286,41 +306,37 @@
                                 ))}
                             </div>
 
-                            {/* 畫布區塊 */}
+                            {/* 畫布區塊 - 更換了高質感街道/車輛背景 */}
                             <div className="relative w-full max-w-2xl aspect-[3/2] bg-black border-2 border-[#333] rounded overflow-hidden mb-6">
-                                {/* 背景圖 */}
                                 <div 
                                     className="absolute inset-0 bg-cover bg-center opacity-80"
-                                    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1515569067071-ec3b51335dd0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')" }}
+                                    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=800&q=80')" }}
                                 ></div>
 
                                 {/* Step 1: 網格 */}
                                 {step >= 1 && (
                                     <div className="absolute inset-0 grid grid-cols-7 grid-rows-5 pointer-events-none">
                                         {Array.from({ length: 35 }).map((_, i) => (
-                                            <div key={i} className="border border-white/30 border-dashed"></div>
+                                            <div key={i} className="border border-white/40 border-dashed"></div>
                                         ))}
                                     </div>
                                 )}
 
-                                {/* Step 2: 中心點 */}
+                                {/* Step 2: 中心點 (對準新圖片的車輛位置) */}
                                 {step >= 2 && (
                                     <div className="absolute inset-0 pointer-events-none">
-                                        <div className="absolute w-3 h-3 bg-red-500 rounded-full shadow-[0_0_8px_red]" style={{ top: '55%', left: '30%', transform: 'translate(-50%, -50%)' }}></div>
-                                        <div className="absolute w-3 h-3 bg-red-500 rounded-full shadow-[0_0_8px_red]" style={{ top: '60%', left: '70%', transform: 'translate(-50%, -50%)' }}></div>
+                                        <div className="absolute w-3 h-3 bg-red-500 rounded-full shadow-[0_0_8px_red]" style={{ top: '65%', left: '50%', transform: 'translate(-50%, -50%)' }}></div>
                                     </div>
                                 )}
 
                                 {/* Step 3: 雜亂預測框 */}
                                 {step === 3 && (
                                     <div className="absolute inset-0 pointer-events-none">
-                                        {/* 左車 */}
-                                        <div className="absolute border-2 border-red-500 bg-red-500/10" style={{ top: '55%', left: '30%', width: '120px', height: '100px', transform: 'translate(-50%, -50%)' }}></div>
-                                        <div className="absolute border-2 border-yellow-400 bg-yellow-400/10" style={{ top: '52%', left: '32%', width: '140px', height: '90px', transform: 'translate(-50%, -50%)' }}></div>
-                                        <div className="absolute border-2 border-orange-500 bg-orange-500/10" style={{ top: '58%', left: '28%', width: '110px', height: '110px', transform: 'translate(-50%, -50%)' }}></div>
-                                        {/* 右車 */}
-                                        <div className="absolute border-2 border-pink-500 bg-pink-500/10" style={{ top: '60%', left: '70%', width: '150px', height: '120px', transform: 'translate(-50%, -50%)' }}></div>
-                                        <div className="absolute border-2 border-cyan-400 bg-cyan-400/10" style={{ top: '62%', left: '68%', width: '130px', height: '130px', transform: 'translate(-50%, -50%)' }}></div>
+                                        {/* 車體多重框 */}
+                                        <div className="absolute border-2 border-red-500 bg-red-500/10" style={{ top: '65%', left: '50%', width: '220px', height: '120px', transform: 'translate(-50%, -50%)' }}></div>
+                                        <div className="absolute border-2 border-yellow-400 bg-yellow-400/10" style={{ top: '68%', left: '48%', width: '250px', height: '110px', transform: 'translate(-50%, -50%)' }}></div>
+                                        <div className="absolute border-2 border-orange-500 bg-orange-500/10" style={{ top: '63%', left: '52%', width: '200px', height: '140px', transform: 'translate(-50%, -50%)' }}></div>
+                                        <div className="absolute border-2 border-cyan-400 bg-cyan-400/10" style={{ top: '66%', left: '49%', width: '230px', height: '130px', transform: 'translate(-50%, -50%)' }}></div>
                                     </div>
                                 )}
 
@@ -328,12 +344,8 @@
                                 {step === 4 && (
                                     <div className="absolute inset-0 pointer-events-none">
                                         <div className="absolute border-[3px] border-[#4CAF50] bg-[#4CAF50]/20 flex items-start p-1 text-white font-bold text-xs shadow-[0_0_10px_rgba(76,175,80,0.5)]" 
-                                             style={{ top: '55%', left: '30%', width: '120px', height: '100px', transform: 'translate(-50%, -50%)' }}>
-                                            Car 0.92
-                                        </div>
-                                        <div className="absolute border-[3px] border-[#4CAF50] bg-[#4CAF50]/20 flex items-start p-1 text-white font-bold text-xs shadow-[0_0_10px_rgba(76,175,80,0.5)]" 
-                                             style={{ top: '60%', left: '70%', width: '140px', height: '115px', transform: 'translate(-50%, -50%)' }}>
-                                            Car 0.88
+                                             style={{ top: '65%', left: '50%', width: '240px', height: '125px', transform: 'translate(-50%, -50%)' }}>
+                                            Classic Car 0.96
                                         </div>
                                     </div>
                                 )}
@@ -361,39 +373,52 @@
         </section>
 
         <article id="applications" class="fade-in-section">
-            <h2 class="section-title">應用與查證</h2>
-            <div class="card">
-                <h3 class="sub-title">YOLO 的常見應用</h3>
-                <p>只要需要「即時處理」與「視覺辨識」的場景，幾乎都能看到 YOLO 的身影：</p>
-                <ul>
-                    <li><strong>自動駕駛：</strong> 毫秒級別地辨識行人、車輛與紅綠燈 🚦。</li>
-                    <li><strong>智慧安防：</strong> 即時監控是否有可疑人物闖入，或工廠內員工是否確實配戴安全帽 🏭。</li>
-                    <li><strong>無人機與機器視覺：</strong> 幫助無人機追蹤移動中的目標（例如車輛或動物） 🚁。</li>
-                    <li><strong>零售自動化：</strong> 無人商店中自動辨識顧客拿取了哪些商品。</li>
-                </ul>
+            <h2 class="section-title">YOLO 的應用場景</h2>
+            
+            <p style="color: var(--text-secondary); text-align: center; margin-bottom: 2rem;">只要需要「即時處理」與「視覺辨識」的場景，幾乎都能看到 YOLO 的身影：</p>
 
-                <hr style="border-color: var(--border-color); margin: 30px 0;">
-
-                <h3 class="sub-title">查證部分：執行邏輯</h3>
-                <div class="notice-box">
-                    <p><strong>查證資料參考:</strong> <a href="https://hackmd.io/@allen108108/r1-wSTAjS" target="_blank" style="color: var(--accent-color); text-decoration: underline;">https://hackmd.io/@allen108108/r1-wSTAjS</a></p>
-                    <p><strong>資料對比AI的回答:</strong> 幾乎相同</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="card" style="margin-bottom: 0;">
+                    <h3 class="text-xl font-bold mb-2 text-white">🚦 自動駕駛</h3>
+                    <p class="text-gray-400">毫秒級別地辨識行人、車輛與紅綠燈，是自駕系統的視覺核心。</p>
                 </div>
+                <div class="card" style="margin-bottom: 0;">
+                    <h3 class="text-xl font-bold mb-2 text-white">🏭 智慧安防</h3>
+                    <p class="text-gray-400">即時監控是否有可疑人物闖入，或工廠內員工是否確實配戴安全帽。</p>
+                </div>
+                <div class="card" style="margin-bottom: 0;">
+                    <h3 class="text-xl font-bold mb-2 text-white">🚁 無人機與機器視覺</h3>
+                    <p class="text-gray-400">幫助無人機追蹤移動中的目標（例如車輛或動物）。</p>
+                </div>
+                <div class="card" style="margin-bottom: 0;">
+                    <h3 class="text-xl font-bold mb-2 text-white">🛒 零售自動化</h3>
+                    <p class="text-gray-400">無人商店中自動辨識顧客拿取了哪些商品，實現拿了就走的結帳體驗。</p>
+                </div>
+            </div>
 
-                <p><strong>應用場景：自動駕駛與輔助駕駛系統</strong></p>
+            <div class="card border border-[#e5c07b]">
+                <h3 class="sub-title mt-0">深入探討：自動駕駛與輔助駕駛系統</h3>
                 <p><strong>具體功能：</strong>在高速行駛的車輛上，YOLO 能夠即時辨識前方的：</p>
-                <ul>
+                <ul class="custom-list">
                     <li>車輛（汽車、機車、腳踏車）</li>
                     <li>行人與其他用路人（確保行車安全）</li>
                     <li>交通號誌（紅綠燈、停止標誌、速限標誌）</li>
                     <li>車道線、道路邊界</li>
                 </ul>
-                <p><strong>重要性：</strong>辨識結果必須在毫秒級的時間內完成，才能讓自動駕駛系統及時做出判斷（例如：加速、減速、轉向、煞車），確保行車安全。YOLO 的速度優勢在這裡發揮得淋漓盡致。</p>
+                <div class="notice-box">
+                    <strong>重要性：</strong>辨識結果必須在毫秒級的時間內完成，才能讓自動駕駛系統及時做出判斷（例如：加速、減速、轉向、煞車），確保行車安全。YOLO 的速度優勢在這裡發揮得淋漓盡致。
+                </div>
                 
-                <p style="margin-top: 20px;">
-                    <strong>參考資料:</strong> <a href="https://pansci.asia/archives/194503" target="_blank" style="color: var(--accent-color);">https://pansci.asia/archives/194503</a><br>
-                    <strong>中研院影片:</strong> <a href="https://youtu.be/siIggu-g6Eg" target="_blank" style="color: var(--accent-color);">https://youtu.be/siIggu-g6Eg</a>
-                </p>
+                <p style="margin-top: 20px; font-weight: bold;">中研院影片解說：</p>
+                <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/siIggu-g6Eg" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+
+                <p style="margin-top: 30px; font-weight: bold;">參考資料 (PanSci 泛科學)：</p>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 5px;">若下方內容被安全機制阻擋，請 <a href="https://pansci.asia/archives/194503" target="_blank" style="color: var(--accent-color); text-decoration: underline;">點此開啟原網頁</a>。</p>
+                <div class="iframe-container" style="height: 300px;">
+                    <iframe src="https://pansci.asia/archives/194503" title="PanSci Reference"></iframe>
+                </div>
             </div>
         </article>
 
@@ -404,26 +429,19 @@
             </div>
         </section>
 
-        <section id="contact" style="border-bottom: none; padding-top: 20px;">
-            <div style="text-align: center;">
-                <h2>準備好開始合作了嗎？</h2>
-                <p style="color: var(--text-secondary); margin: 20px 0;">歡迎隨時透過電子郵件與我聯繫</p>
-                <a href="mailto:s111316020@stu.ntue.edu.tw" class="btn-cta">發送郵件</a>
-            </div>
-        </section>
     </main>
 
-    <footer class="contact-footer">
+    <footer style="background-color: var(--bg-secondary); padding: 40px 0; text-align: center; border-top: 1px solid var(--accent-color); margin-top: 40px;">
         <p>Email: s111316020@stu.ntue.edu.tw</p>
         <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 10px;">
-            © 2025 Wang Meng-Fan. All Rights Reserved. <br>
-            <time datetime="2025-12-13">最後更新日期：2025年12月15日</time>
+            © 2026 Wang Meng-Fan. All Rights Reserved. <br>
+            最後更新日期：2026年5月
         </p>
     </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. 漢堡選單互動邏輯
+            // 漢堡選單互動邏輯
             const menuToggle = document.getElementById('mobile-menu');
             const navLinks = document.getElementById('nav-links');
 
@@ -441,7 +459,7 @@
                 });
             }
 
-            // 2. 滾動視差與淡入動畫
+            // 滾動視差與淡入動畫
             const observerOptions = {
                 threshold: 0.1,
                 rootMargin: "0px 0px -50px 0px"
@@ -458,8 +476,6 @@
 
             const fadeElements = document.querySelectorAll('.fade-in-section');
             fadeElements.forEach(el => observer.observe(el));
-
-            console.log("System Initialized: YOLO Portfolio Loaded.");
         });
     </script>
 </body>
