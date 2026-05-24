@@ -3,278 +3,464 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLO (You Only Look Once)</title>
+    <title>YOLO 演算法解析 | 王孟帆</title>
+    <meta name="description" content="YOLO (You Only Look Once) 演算法解析、核心概念與視覺化互動展示。">
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0a0a0a',
+                        secondary: '#141414',
+                        accent: '#e5c07b',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+                        serif: ['Times New Roman', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
+        /* =========================================
+           CSS 變數定義 (Design System)
+           仿鳴潮風格：深邃黑、科技灰、共鳴金/青
+           ========================================= */
         :root {
-            --primary: #1a202c;
-            --secondary: #2b6cb0;
-            --accent: #e53e3e;
-            --bg: #f7fafc;
-            --text: #2d3748;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.7;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        .card {
-            background: white;
-            border-radius: 10px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-        h1 {
-            color: var(--primary);
-            border-bottom: 3px solid var(--secondary);
-            padding-bottom: 0.5rem;
-        }
-        h2 {
-            color: var(--secondary);
-            margin-top: 1.5rem;
-        }
-        h3 {
-            color: var(--primary);
-        }
-        ul {
-            padding-left: 1.5rem;
-        }
-        li {
-            margin-bottom: 0.5rem;
-        }
-        a {
-            color: var(--secondary);
-            text-decoration: none;
-            word-break: break-all;
-        }
-        a:hover {
-            text-decoration: underline;
+            --bg-primary: #0a0a0a;       
+            --bg-secondary: #141414;     
+            --bg-glass: rgba(10, 10, 10, 0.85); 
+            
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            
+            --accent-color: #e5c07b;     
+            --accent-glow: rgba(229, 192, 123, 0.3);
+            --border-color: #333333;
+
+            --font-main: 'Inter', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+            
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 32px;
+            --spacing-xl: 64px;
+            --container-width: 1000px;
+            --header-height: 70px;
+            
+            --transition-speed: 0.3s;
         }
 
-        /* 視覺化互動區塊 CSS */
-        .interactive-section {
-            background: #edf2f7;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin: 2rem 0;
-            text-align: center;
+        /* =========================================
+           Base Styles
+           ========================================= */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.8;
+            overflow-x: hidden; 
         }
-        .canvas-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            height: 350px;
-            margin: 1rem auto;
-            background-image: url('https://images.unsplash.com/photo-1515569067071-ec3b51335dd0?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80');
-            background-size: cover;
-            background-position: center;
-            border: 2px solid #cbd5e0;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .layer {
+        a { text-decoration: none; color: inherit; transition: color var(--transition-speed); }
+        ul { list-style: none; padding-left: 1.5rem; }
+        li { margin-bottom: 0.5rem; position: relative; }
+        li::before {
+            content: '✦';
+            color: var(--accent-color);
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            display: none;
+            left: -1.5rem;
         }
-        #layer-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            grid-template-rows: repeat(5, 1fr);
-        }
-        #layer-grid div { border: 1px dashed rgba(255, 255, 255, 0.5); }
-        .dot {
-            position: absolute; width: 10px; height: 10px;
-            background: var(--accent); border-radius: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 4px rgba(0,0,0,0.8);
-        }
-        .bbox-messy {
-            position: absolute; border: 2px solid;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 0, 0.1);
-        }
-        .bbox-final {
-            position: absolute; border: 3px solid #48bb78;
-            transform: translate(-50%, -50%);
-            background: rgba(72, 187, 120, 0.2);
-            color: white; font-weight: bold; text-shadow: 1px 1px 2px black;
-            padding: 2px; font-size: 0.8rem;
-        }
-        .controls {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 1rem;
-        }
-        button {
-            background-color: var(--primary);
-            color: white; border: none;
-            padding: 8px 16px; border-radius: 5px;
-            cursor: pointer; font-weight: bold;
-            transition: background 0.3s;
-        }
-        button:hover { background-color: var(--secondary); }
-        button.active { background-color: var(--secondary); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
-        .step-text {
-            display: none;
+        img, video, iframe { max-width: 100%; height: auto; display: block; }
+        
+        mark {
+            background-color: transparent;
+            color: var(--accent-color);
             font-weight: bold;
-            color: var(--secondary);
-            margin-top: 1rem;
+            text-shadow: 0 0 5px var(--accent-glow);
         }
-        .step-text.active {
-            display: block;
+
+        /* =========================================
+           Layout Components
+           ========================================= */
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height);
+            background-color: var(--bg-glass); backdrop-filter: blur(10px);
+            z-index: 1000; border-bottom: 1px solid var(--border-color);
         }
+        .navbar-container {
+            max-width: var(--container-width); margin: 0 auto; height: 100%;
+            display: flex; justify-content: space-between; align-items: center; padding: 0 var(--spacing-md);
+        }
+        .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; color: var(--text-primary); }
+        .logo span { color: var(--accent-color); }
+        
+        .nav-links { display: flex; gap: var(--spacing-lg); }
+        .nav-links a {
+            font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-secondary); position: relative;
+        }
+        .nav-links a:hover, .nav-links a.active { color: var(--text-primary); }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -5px; left: 0;
+            width: 0%; height: 2px; background-color: var(--accent-color);
+            transition: width var(--transition-speed);
+        }
+        .nav-links a:hover::after { width: 100%; }
+        
+        .menu-toggle { display: none; cursor: pointer; font-size: 1.5rem; }
+
+        /* =========================================
+           Main Content Sections
+           ========================================= */
+        main { margin-top: var(--header-height); }
+        section, article {
+            padding: var(--spacing-xl) var(--spacing-md);
+            max-width: var(--container-width); margin: 0 auto;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .section-title {
+            font-size: 2rem; margin-bottom: var(--spacing-lg); text-align: center;
+            text-transform: uppercase; letter-spacing: 3px;
+        }
+        .section-title::after {
+            content: ''; display: block; width: 60px; height: 3px;
+            background-color: var(--accent-color); margin: 10px auto 0;
+        }
+        .sub-title {
+            color: var(--accent-color); font-size: 1.3rem; margin: 1.5rem 0 1rem;
+            border-left: 3px solid var(--accent-color); padding-left: 10px;
+        }
+
+        /* --- Hero Section --- */
+        #hero {
+            height: calc(100vh - var(--header-height));
+            display: flex; align-items: center; justify-content: center; position: relative;
+            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(10,10,10,1)), url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop'); 
+            background-size: cover; background-position: center; border-bottom: none;
+        }
+        .hero-content { text-align: center; z-index: 2; animation: fadeInUp 1s ease-out; }
+        .hero-content h1 { font-size: 4rem; margin-bottom: var(--spacing-sm); text-shadow: 0 0 20px rgba(0,0,0,0.8); color: var(--accent-color); }
+        .hero-content p { font-size: 1.2rem; color: var(--text-secondary); margin-bottom: var(--spacing-lg); letter-spacing: 2px; }
+        
+        .btn-cta {
+            display: inline-block; padding: 12px 30px; background-color: transparent;
+            border: 1px solid var(--accent-color); color: var(--accent-color);
+            font-weight: bold; letter-spacing: 2px; transition: all var(--transition-speed); cursor: pointer;
+        }
+        .btn-cta:hover {
+            background-color: var(--accent-color); color: var(--bg-primary);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        /* --- Content Blocks --- */
+        .notice-box {
+            background: rgba(255, 255, 255, 0.03); padding: var(--spacing-md);
+            margin: var(--spacing-md) 0; border-left: 3px solid var(--accent-color);
+            font-size: 0.95rem; border-radius: 0 8px 8px 0;
+        }
+        .card {
+            background: var(--bg-secondary); padding: var(--spacing-lg);
+            border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: var(--spacing-lg);
+        }
+
+        .contact-footer {
+            background-color: var(--bg-secondary); padding: var(--spacing-xl) 0;
+            text-align: center; border-top: 1px solid var(--accent-color);
+        }
+
+        /* =========================================
+           RWD & Animations
+           ========================================= */
+        @media (max-width: 768px) {
+            .nav-links {
+                position: fixed; top: var(--header-height); right: -100%;
+                width: 70%; height: calc(100vh - var(--header-height));
+                background-color: var(--bg-primary); flex-direction: column;
+                align-items: center; justify-content: center; transition: right var(--transition-speed);
+                border-left: 1px solid var(--border-color);
+            }
+            .nav-links.active { right: 0; }
+            .menu-toggle { display: block; }
+            .hero-content h1 { font-size: 2.5rem; }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in-section {
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+            will-change: opacity, visibility;
+        }
+        .fade-in-section.is-visible { opacity: 1; transform: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="card">
-        <h1>YOLO (You Only Look Once)</h1>
-        <p>YOLO (You Only Look Once) 是一種基於深度學習的即時物件偵測 (Object Detection) 模型，主要透過將物件偵測簡化成單一的回歸問題，解決過往的物件演算法運算速度過慢的劣勢。</p>
-
-        <h2>YOLO 的運作為以下幾個關鍵步驟：</h2>
-        
-        <div class="interactive-section">
-            <div class="controls">
-                <button id="btn-1" onclick="showStep(1)" class="active">切割網格</button>
-                <button id="btn-2" onclick="showStep(2)">確立責任</button>
-                <button id="btn-3" onclick="showStep(3)">同步預測</button>
-                <button id="btn-4" onclick="showStep(4)">去蕪存菁</button>
-            </div>
-            
-            <div class="canvas-wrapper">
-                <div id="layer-grid" class="layer" style="display: grid;"></div>
-                <div id="layer-centers" class="layer">
-                    <div class="dot" style="top: 55%; left: 30%;"></div>
-                    <div class="dot" style="top: 60%; left: 70%;"></div>
-                </div>
-                <div id="layer-messy" class="layer">
-                    <div class="bbox-messy" style="top: 55%; left: 30%; width: 120px; height: 100px; border-color: red;"></div>
-                    <div class="bbox-messy" style="top: 52%; left: 32%; width: 140px; height: 90px; border-color: yellow;"></div>
-                    <div class="bbox-messy" style="top: 58%; left: 28%; width: 110px; height: 110px; border-color: orange;"></div>
-                    <div class="bbox-messy" style="top: 60%; left: 70%; width: 150px; height: 120px; border-color: pink;"></div>
-                    <div class="bbox-messy" style="top: 62%; left: 68%; width: 130px; height: 130px; border-color: cyan;"></div>
-                </div>
-                <div id="layer-final" class="layer">
-                    <div class="bbox-final" style="top: 55%; left: 30%; width: 120px; height: 100px;">Car</div>
-                    <div class="bbox-final" style="top: 60%; left: 70%; width: 140px; height: 115px;">Car</div>
-                </div>
-            </div>
-
-            <div id="text-1" class="step-text active">首先將整張輸入圖片切割成 S * S 的網格。</div>
-            <div id="text-2" class="step-text">如果圖片中某個物件的「中心點」落在某個網格內，那個網格就負責預測並找出該物件。</div>
-            <div id="text-3" class="step-text">每個網格會同時預測出數個邊界框 (Bounding Box) 的位置（X, Y 座標與長寬）、包含物件的「信心分數」，以及該物件屬於各個類別的機率。</div>
-            <div id="text-4" class="step-text">由於同一個物件可能會被多個相鄰的網格預測到，最後會使用一種稱為「非極大值抑制 (NMS)」的技術，刪除重疊且信心度較低的框，只留下最精準的那一個。</div>
+    <header>
+        <div class="navbar-container">
+            <a href="#" class="logo">WANG<span>.MF</span></a>
+            <div class="menu-toggle" id="mobile-menu">☰</div>
+            <nav class="nav-links" id="nav-links">
+                <a href="#hero">首頁</a>
+                <a href="#concept">核心概念</a>
+                <a href="#interactive">運作流程</a>
+                <a href="#applications">應用與查證</a>
+                <a href="#reflections">學習心得</a>
+            </nav>
         </div>
+    </header>
 
-        <ul>
-            <li><strong>切割網格：</strong> 首先將整張輸入圖片切割成 S * S 的網格。</li>
-            <li><strong>確立責任：</strong> 如果圖片中某個物件的「中心點」落在某個網格內，那個網格就負責預測並找出該物件。</li>
-            <li><strong>同步預測：</strong> 每個網格會同時預測出數個邊界框 (Bounding Box) 的位置（X, Y 座標與長寬）、包含物件的「信心分數」，以及該物件屬於各個類別的機率。</li>
-            <li><strong>去蕪存菁：</strong> 由於同一個物件可能會被多個相鄰的網格預測到，最後會使用一種稱為「非極大值抑制 (NMS)」的技術，刪除重疊且信心度較低的框，只留下最精準的那一個。</li>
-        </ul>
+    <main>
+        <section id="hero">
+            <div class="hero-content">
+                <h1>YOLO</h1>
+                <p>You Only Look Once | 即時物件偵測模型</p>
+                <br>
+                <a href="#concept" class="btn-cta">開始探索</a>
+            </div>
+        </section>
 
-        <h2>YOLO 的應用：</h2>
-        <ul>
-            <li><strong>自動駕駛：</strong> 毫秒級別地辨識行人、車輛與紅綠燈。</li>
-            <li><strong>智慧安防：</strong> 即時監控是否有可疑人物闖入，或工廠內員工是否確實配戴安全帽 。</li>
-            <li><strong>無人機與機器視覺：</strong> 幫助無人機追蹤移動中的目標（例如車輛或動物）。</li>
-            <li><strong>零售自動化：</strong> 無人商店中自動辨識顧客拿取了哪些商品。</li>
-        </ul>
-    </div>
+        <article id="concept" class="fade-in-section">
+            <h2 class="section-title">核心概念</h2>
+            <div class="card">
+                <p><mark>YOLO (You Only Look Once)</mark> 是一種基於深度學習的即時物件偵測 (Object Detection) 模型，主要透過將物件偵測簡化成單一的回歸問題，解決過往的物件演算法運算速度過慢的劣勢。</p>
+                
+                <h3 class="sub-title">🧠 這個演算法是甚麼？</h3>
+                <p>YOLO 是一種基於深度學習的即時物件偵測模型。簡單來說，它不僅能告訴你圖片裡有「什麼東西」（分類），還能精準標示出這些東西「在哪裡」（定位）。它的名字「你只看一次」非常傳神地表達了它只需將影像輸入神經網路一次，就能直接得出結果的特性。</p>
 
-    <div class="card">
-        <h2>與AI(Gemini-引導式學習)的對話內容:</h2>
-        <p>我們來一步步拆解 YOLO 演算法的核心概念：</p>
-        
-        <h3>🧠 1. 這個演算法是甚麼？</h3>
-        <p>YOLO (You Only Look Once) 是一種基於深度學習的即時物件偵測 (Object Detection) 模型。簡單來說，它不僅能告訴你圖片裡有「什麼東西」（分類），還能精準標示出這些東西「在哪裡」（定位）。它的名字「你只看一次」非常傳神地表達了它只需將影像輸入神經網路一次，就能直接得出結果的特性。</p>
+                <h3 class="sub-title">⚡ 主要解決甚麼問題？</h3>
+                <p>YOLO 主要解決了過去物件偵測演算法「運算速度太慢」的致命傷。</p>
+                <p>在 YOLO 之前，主流模型（如 R-CNN 系列）多採用「兩階段」作法：先在圖片上圈出幾千個可能會有物件的候選區域，然後再逐一對這些區域進行辨識。這種做法雖然準確，但非常耗時。YOLO 將物件偵測轉化為單一的迴歸問題，大幅提升了運算速度，讓影片流的「即時偵測」真正成為可能。</p>
+            </div>
+        </article>
 
-        <h3>⚡ 2. 主要解決甚麼問題？</h3>
-        <p>YOLO 主要解決了過去物件偵測演算法「運算速度太慢」的致命傷。</p>
-        <p>在 YOLO 之前，主流模型（如 R-CNN 系列）多採用「兩階段」作法：先在圖片上圈出幾千個可能會有物件的候選區域，然後再逐一對這些區域進行辨識。這種做法雖然準確，但非常耗時。YOLO 將物件偵測轉化為單一的迴歸問題，大幅提升了運算速度，讓影片流的「即時偵測」真正成為可能。</p>
+        <section id="interactive" class="fade-in-section">
+            <h2 class="section-title">基本運作流程</h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px;">
+                點擊下方步驟按鈕，觀看 YOLO 演算法的視覺化解析。
+            </p>
+            <div id="yolo-interactive-root"></div>
+            
+            <script type="text/babel">
+                const { useState } = React;
 
-        <h3>⚙️ 3. 基本運作流程？</h3>
-        <p>YOLO 的運作可以濃縮為以下幾個關鍵步驟：</p>
-        <ul>
-            <li><strong>切割網格：</strong> 首先將整張輸入圖片切割成 $S \times S$ 的網格 (Grid)。</li>
-            <li><strong>確立責任：</strong> 如果圖片中某個物件的「中心點」落在某個網格內，那個網格就負責預測並找出該物件。</li>
-            <li><strong>同步預測：</strong> 每個網格會同時預測出數個邊界框 (Bounding Box) 的位置（X, Y 座標與長寬）、包含物件的「信心分數」，以及該物件屬於各個類別的機率。</li>
-            <li><strong>去蕪存菁：</strong> 由於同一個物件可能會被多個相鄰的網格預測到，最後會使用一種稱為「非極大值抑制 (NMS)」的技術，刪除重疊且信心度較低的框，只留下最精準的那一個。</li>
-        </ul>
+                function YoloInteractive() {
+                    const [step, setStep] = useState(1);
 
-        <h3>常見應用</h3>
-        <p>只要需要「即時處理」與「視覺辨識」的場景，幾乎都能看到 YOLO 的身影：</p>
-        <ul>
-            <li><strong>自動駕駛：</strong> 毫秒級別地辨識行人、車輛與紅綠燈 🚦。</li>
-            <li><strong>智慧安防：</strong> 即時監控是否有可疑人物闖入，或工廠內員工是否確實配戴安全帽 🏭。</li>
-            <li><strong>無人機與機器視覺：</strong> 幫助無人機追蹤移動中的目標（例如車輛或動物） 🚁。</li>
-            <li><strong>零售自動化：</strong> 無人商店中自動辨識顧客拿取了哪些商品。</li>
-        </ul>
+                    const stepsData = [
+                        { id: 1, title: "切割網格", desc: "首先將整張輸入圖片切割成 S * S 的網格。" },
+                        { id: 2, title: "確立責任", desc: "如果圖片中某個物件的「中心點」落在某個網格內，那個網格就負責預測並找出該物件。" },
+                        { id: 3, title: "同步預測", desc: "每個網格會同時預測出數個邊界框 (Bounding Box) 的位置（X, Y 座標與長寬）、包含物件的「信心分數」，以及該物件屬於各個類別的機率。" },
+                        { id: 4, title: "去蕪存菁", desc: "由於同一個物件可能會被多個相鄰的網格預測到，最後會使用一種稱為「非極大值抑制 (NMS)」的技術，刪除重疊且信心度較低的框，只留下最精準的那一個。" }
+                    ];
 
-        <p>從第三點的運作流程來看，YOLO 是透過「網格 (Grid)」來劃分預測責任的。你可以想像一下，如果圖片中有一群靠得非常近的小東西（例如遠處密密麻麻的鳥群），YOLO 這種「一個網格只能預測少數物件」的設計，可能會遇到什麼樣的困難呢？</p>
-    </div>
+                    return (
+                        <div className="flex flex-col items-center w-full p-6 font-sans rounded-xl bg-[#141414] border border-[#333] shadow-2xl">
+                            
+                            {/* 控制按鈕 */}
+                            <div className="flex flex-wrap justify-center gap-3 mb-6 w-full">
+                                {stepsData.map(s => (
+                                    <button 
+                                        key={s.id}
+                                        onClick={() => setStep(s.id)}
+                                        className={`px-5 py-2 rounded font-bold tracking-wider transition-all duration-300 border ${
+                                            step === s.id 
+                                            ? 'bg-[#e5c07b] text-black border-[#e5c07b] shadow-[0_0_15px_rgba(229,192,123,0.4)]' 
+                                            : 'bg-transparent text-[#a0a0a0] border-[#333] hover:border-[#e5c07b] hover:text-[#e5c07b]'
+                                        }`}
+                                    >
+                                        {s.title}
+                                    </button>
+                                ))}
+                            </div>
 
-    <div class="card">
-        <h2>查證部分:執行邏輯</h2>
-        <p><strong>查證資料參考:</strong> <a href="https://hackmd.io/@allen108108/r1-wSTAjS" target="_blank">https://hackmd.io/@allen108108/r1-wSTAjS</a></p>
-        <p><strong>資料對比AI的回答:</strong> 幾乎相同</p>
+                            {/* 畫布區塊 */}
+                            <div className="relative w-full max-w-2xl aspect-[3/2] bg-black border-2 border-[#333] rounded overflow-hidden mb-6">
+                                {/* 背景圖 */}
+                                <div 
+                                    className="absolute inset-0 bg-cover bg-center opacity-80"
+                                    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1515569067071-ec3b51335dd0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')" }}
+                                ></div>
 
-        <h3>應用場景：自動駕駛與輔助駕駛系統</h3>
-        <p><strong>具體功能：</strong>在高速行駛的車輛上，YOLO 能夠即時辨識前方的：</p>
-        <ul>
-            <li>車輛（汽車、機車、腳踏車）</li>
-            <li>行人與其他用路人（確保行車安全）</li>
-            <li>交通號誌（紅綠燈、停止標誌、速限標誌）</li>
-            <li>車道線、道路邊界</li>
-        </ul>
-        <p><strong>重要性：</strong>辨識結果必須在毫秒級的時間內完成，才能讓自動駕駛系統及時做出判斷（例如：加速、減速、轉向、煞車），確保行車安全。YOLO 的速度優勢在這裡發揮得淋漓盡致</p>
+                                {/* Step 1: 網格 */}
+                                {step >= 1 && (
+                                    <div className="absolute inset-0 grid grid-cols-7 grid-rows-5 pointer-events-none">
+                                        {Array.from({ length: 35 }).map((_, i) => (
+                                            <div key={i} className="border border-white/30 border-dashed"></div>
+                                        ))}
+                                    </div>
+                                )}
 
-        <p><strong>參考資料:</strong> <a href="https://pansci.asia/archives/194503" target="_blank">https://pansci.asia/archives/194503</a></p>
-        <p><strong>中研院影片:</strong> <a href="https://youtu.be/siIggu-g6Eg" target="_blank">https://youtu.be/siIggu-g6Eg</a></p>
-    </div>
+                                {/* Step 2: 中心點 */}
+                                {step >= 2 && (
+                                    <div className="absolute inset-0 pointer-events-none">
+                                        <div className="absolute w-3 h-3 bg-red-500 rounded-full shadow-[0_0_8px_red]" style={{ top: '55%', left: '30%', transform: 'translate(-50%, -50%)' }}></div>
+                                        <div className="absolute w-3 h-3 bg-red-500 rounded-full shadow-[0_0_8px_red]" style={{ top: '60%', left: '70%', transform: 'translate(-50%, -50%)' }}></div>
+                                    </div>
+                                )}
 
-    <div class="card">
-        <h2>學習心得:</h2>
-        <p>可較快的將重點直接提取，透過重點的關鍵字可在網路上更快速的找到相關文章，但由於近期Gemini新增的運算限制，需要思考如何輸入更精確的Prompt，避免過多的輸入次數耗掉運算資源。AI能提供更快的重點抓取，但資訊的準確度與內容的延伸仍須自行搜尋資料比對研究。</p>
-    </div>
-</div>
+                                {/* Step 3: 雜亂預測框 */}
+                                {step === 3 && (
+                                    <div className="absolute inset-0 pointer-events-none">
+                                        {/* 左車 */}
+                                        <div className="absolute border-2 border-red-500 bg-red-500/10" style={{ top: '55%', left: '30%', width: '120px', height: '100px', transform: 'translate(-50%, -50%)' }}></div>
+                                        <div className="absolute border-2 border-yellow-400 bg-yellow-400/10" style={{ top: '52%', left: '32%', width: '140px', height: '90px', transform: 'translate(-50%, -50%)' }}></div>
+                                        <div className="absolute border-2 border-orange-500 bg-orange-500/10" style={{ top: '58%', left: '28%', width: '110px', height: '110px', transform: 'translate(-50%, -50%)' }}></div>
+                                        {/* 右車 */}
+                                        <div className="absolute border-2 border-pink-500 bg-pink-500/10" style={{ top: '60%', left: '70%', width: '150px', height: '120px', transform: 'translate(-50%, -50%)' }}></div>
+                                        <div className="absolute border-2 border-cyan-400 bg-cyan-400/10" style={{ top: '62%', left: '68%', width: '130px', height: '130px', transform: 'translate(-50%, -50%)' }}></div>
+                                    </div>
+                                )}
 
-<script>
-    // 建立網格
-    const gridLayer = document.getElementById('layer-grid');
-    for(let i=0; i<35; i++) {
-        let div = document.createElement('div');
-        gridLayer.appendChild(div);
-    }
+                                {/* Step 4: 最終預測框 (NMS) */}
+                                {step === 4 && (
+                                    <div className="absolute inset-0 pointer-events-none">
+                                        <div className="absolute border-[3px] border-[#4CAF50] bg-[#4CAF50]/20 flex items-start p-1 text-white font-bold text-xs shadow-[0_0_10px_rgba(76,175,80,0.5)]" 
+                                             style={{ top: '55%', left: '30%', width: '120px', height: '100px', transform: 'translate(-50%, -50%)' }}>
+                                            Car 0.92
+                                        </div>
+                                        <div className="absolute border-[3px] border-[#4CAF50] bg-[#4CAF50]/20 flex items-start p-1 text-white font-bold text-xs shadow-[0_0_10px_rgba(76,175,80,0.5)]" 
+                                             style={{ top: '60%', left: '70%', width: '140px', height: '115px', transform: 'translate(-50%, -50%)' }}>
+                                            Car 0.88
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
-    function showStep(step) {
-        // 重置按鈕
-        for(let i=1; i<=4; i++) {
-            document.getElementById('btn-'+i).classList.remove('active');
-            document.getElementById('text-'+i).classList.remove('active');
-        }
-        document.getElementById('btn-'+step).classList.add('active');
-        document.getElementById('text-'+step).classList.add('active');
+                            {/* 說明文字 */}
+                            <div className="w-full max-w-2xl min-h-[80px] p-4 bg-[#0a0a0a] border-l-4 border-[#e5c07b] rounded">
+                                <h4 className="text-[#e5c07b] font-bold mb-1 text-lg">{stepsData[step - 1].title}</h4>
+                                <p className="text-gray-300 leading-relaxed text-sm md:text-base">
+                                    {stepsData[step - 1].desc}
+                                </p>
+                            </div>
+                            
+                            <div className="mt-6 text-sm text-[#a0a0a0]">
+                                <p>從運作流程來看，YOLO 是透過「網格 (Grid)」來劃分預測責任的。你可以想像一下，如果圖片中有一群靠得非常近的小東西（例如遠處密密麻麻的鳥群），YOLO 這種「一個網格只能預測少數物件」的設計，可能會遇到困難。</p>
+                            </div>
 
-        // 控制圖層顯示
-        document.getElementById('layer-grid').style.display = (step >= 1) ? 'grid' : 'none';
-        document.getElementById('layer-centers').style.display = (step >= 2) ? 'block' : 'none';
-        document.getElementById('layer-messy').style.display = (step === 3) ? 'block' : 'none';
-        document.getElementById('layer-final').style.display = (step === 4) ? 'block' : 'none';
-    }
-</script>
+                        </div>
+                    );
+                }
+
+                const root = ReactDOM.createRoot(document.getElementById('yolo-interactive-root'));
+                root.render(<YoloInteractive />);
+            </script>
+        </section>
+
+        <article id="applications" class="fade-in-section">
+            <h2 class="section-title">應用與查證</h2>
+            <div class="card">
+                <h3 class="sub-title">YOLO 的常見應用</h3>
+                <p>只要需要「即時處理」與「視覺辨識」的場景，幾乎都能看到 YOLO 的身影：</p>
+                <ul>
+                    <li><strong>自動駕駛：</strong> 毫秒級別地辨識行人、車輛與紅綠燈 🚦。</li>
+                    <li><strong>智慧安防：</strong> 即時監控是否有可疑人物闖入，或工廠內員工是否確實配戴安全帽 🏭。</li>
+                    <li><strong>無人機與機器視覺：</strong> 幫助無人機追蹤移動中的目標（例如車輛或動物） 🚁。</li>
+                    <li><strong>零售自動化：</strong> 無人商店中自動辨識顧客拿取了哪些商品。</li>
+                </ul>
+
+                <hr style="border-color: var(--border-color); margin: 30px 0;">
+
+                <h3 class="sub-title">查證部分：執行邏輯</h3>
+                <div class="notice-box">
+                    <p><strong>查證資料參考:</strong> <a href="https://hackmd.io/@allen108108/r1-wSTAjS" target="_blank" style="color: var(--accent-color); text-decoration: underline;">https://hackmd.io/@allen108108/r1-wSTAjS</a></p>
+                    <p><strong>資料對比AI的回答:</strong> 幾乎相同</p>
+                </div>
+
+                <p><strong>應用場景：自動駕駛與輔助駕駛系統</strong></p>
+                <p><strong>具體功能：</strong>在高速行駛的車輛上，YOLO 能夠即時辨識前方的：</p>
+                <ul>
+                    <li>車輛（汽車、機車、腳踏車）</li>
+                    <li>行人與其他用路人（確保行車安全）</li>
+                    <li>交通號誌（紅綠燈、停止標誌、速限標誌）</li>
+                    <li>車道線、道路邊界</li>
+                </ul>
+                <p><strong>重要性：</strong>辨識結果必須在毫秒級的時間內完成，才能讓自動駕駛系統及時做出判斷（例如：加速、減速、轉向、煞車），確保行車安全。YOLO 的速度優勢在這裡發揮得淋漓盡致。</p>
+                
+                <p style="margin-top: 20px;">
+                    <strong>參考資料:</strong> <a href="https://pansci.asia/archives/194503" target="_blank" style="color: var(--accent-color);">https://pansci.asia/archives/194503</a><br>
+                    <strong>中研院影片:</strong> <a href="https://youtu.be/siIggu-g6Eg" target="_blank" style="color: var(--accent-color);">https://youtu.be/siIggu-g6Eg</a>
+                </p>
+            </div>
+        </article>
+
+        <section id="reflections" class="fade-in-section">
+            <h2 class="section-title">學習心得</h2>
+            <div class="notice-box" style="font-size: 1.1rem; line-height: 2;">
+                可較快的將重點直接提取，透過重點的關鍵字可在網路上更快速的找到相關文章，但由於近期Gemini新增的運算限制，需要思考如何輸入更精確的Prompt，避免過多的輸入次數耗掉運算資源。<mark>AI能提供更快的重點抓取，但資訊的準確度與內容的延伸仍須自行搜尋資料比對研究。</mark>
+            </div>
+        </section>
+
+        <section id="contact" style="border-bottom: none; padding-top: 20px;">
+            <div style="text-align: center;">
+                <h2>準備好開始合作了嗎？</h2>
+                <p style="color: var(--text-secondary); margin: 20px 0;">歡迎隨時透過電子郵件與我聯繫</p>
+                <a href="mailto:s111316020@stu.ntue.edu.tw" class="btn-cta">發送郵件</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="contact-footer">
+        <p>Email: s111316020@stu.ntue.edu.tw</p>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 10px;">
+            © 2025 Wang Meng-Fan. All Rights Reserved. <br>
+            <time datetime="2025-12-13">最後更新日期：2025年12月15日</time>
+        </p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. 漢堡選單互動邏輯
+            const menuToggle = document.getElementById('mobile-menu');
+            const navLinks = document.getElementById('nav-links');
+
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener('click', () => {
+                    navLinks.classList.toggle('active');
+                    menuToggle.textContent = navLinks.classList.contains('active') ? '✕' : '☰';
+                });
+
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        navLinks.classList.remove('active');
+                        menuToggle.textContent = '☰';
+                    });
+                });
+            }
+
+            // 2. 滾動視差與淡入動畫
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: "0px 0px -50px 0px"
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target); 
+                    }
+                });
+            }, observerOptions);
+
+            const fadeElements = document.querySelectorAll('.fade-in-section');
+            fadeElements.forEach(el => observer.observe(el));
+
+            console.log("System Initialized: YOLO Portfolio Loaded.");
+        });
+    </script>
 </body>
 </html>
